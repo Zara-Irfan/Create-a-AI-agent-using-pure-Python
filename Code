@@ -1,0 +1,87 @@
+import requests
+import xml.etree.ElementTree as ET
+import time
+
+def fetch_news(topic="world"):
+    """Fetch and display live news from Google News RSS for the given topic."""
+    topic_encoded = topic.replace(" ", "+")
+    url = f"https://news.google.com/rss/search?q={topic_encoded}&hl=en-US&gl=US&ceid=US:en"
+    
+    print(f"\n📰 Fetching latest '{topic.title()}' news...\n")
+    
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            print("❌ Could not fetch news. Try again later.")
+            return
+        
+        root = ET.fromstring(response.content)
+        items = root.findall(".//item")
+        
+        if not items:
+            print("⚠️ No news found for this topic.\n")
+            return
+        
+        for i, item in enumerate(items[:10], start=1):
+            title = item.find("title").text
+            link = item.find("link").text
+            print(f"{i}. {title}")
+            print(f"   🔗 {link}\n")
+            
+        print("✅ Done! These are the latest headlines for your topic.\n")
+        
+    except Exception as e:
+        print("⚠️ Error while fetching news:", e)
+
+
+def understand_command(user_input):
+    """Simple natural language understanding to detect intent."""
+    text = user_input.lower()
+    
+    if "exit" in text or "quit" in text or "bye" in text:
+        return "exit"
+    elif "topic" in text or "about" in text or "change" in text or "on" in text:
+        return "topic"
+    elif "news" in text or "headline" in text or "update" in text or "show" in text:
+        return "news"
+    else:
+        return "unknown"
+
+
+def extract_topic(user_input):
+    """Try to extract a topic name from the user input."""
+    words = user_input.lower().split()
+    common_words = {"show", "me", "the", "latest", "news", "about", "on", "topic", "please", "change", "to"}
+    topic_words = [w for w in words if w not in common_words]
+    return " ".join(topic_words).strip() or "world"
+
+
+def ai_chat():
+    print("🤖 Hello! I’m your AI News Agent.")
+    print("You can type anything like:\n  → 'Show me tech news'\n  → 'Change topic to art'\n  → 'Exit now'\n")
+    
+    topic = "world"
+    
+    while True:
+        user_input = input("You: ").strip()
+        command = understand_command(user_input)
+        
+        if command == "news":
+            possible_topic = extract_topic(user_input)
+            fetch_news(possible_topic)
+        elif command == "topic":
+            possible_topic = extract_topic(user_input)
+            print(f"🔄 Changing topic to '{possible_topic}'...\n")
+            topic = possible_topic
+            fetch_news(topic)
+        elif command == "exit":
+            print("👋 Goodbye! Stay informed and stay curious.")
+            break
+        else:
+            print("🤔 I’m not sure what you meant. Try mentioning 'news', 'topic', or 'exit'.\n")
+        
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    ai_chat()
